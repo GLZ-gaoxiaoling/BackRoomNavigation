@@ -51,12 +51,19 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
         self.actionSetting = QtWidgets.QAction(MainWindow)
         self.actionSetting.setObjectName("actionSetting")
+        self.actionSetting.triggered.connect(self.show_help_message)
         self.menu.addAction(self.actionSetting)
         self.menubar.addAction(self.menu.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+    def show_help_message(self):
+        msg = QtWidgets.QMessageBox()
+        msg.setWindowTitle("帮助")
+        msg.setText("请在输入框中输入当前/欲抵达层级的层级编号，仅数字，例如level11输入11\n随后点击开始导航")
+        msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        msg.exec_()
     def centerCtrl(self):
         self.textBrowser.setText("PARDON MADE")
         # 获取编辑框中的文本
@@ -68,7 +75,8 @@ class Ui_MainWindow(object):
         shortest_path = bfs_shortest_path(self.graph, current_location, after_location)
         # 如果没有找到最短路径
         if shortest_path is None:
-            self.textBrowser.setText(u'<a href="www.baidu.com">我去</a>')
+            self.textBrowser.setText(u'<a href="http://backrooms-wiki-cn.wikidot.com/level-'+after_location+'">未找到路径,'
+                                                                                                            '请自行查看level ' + after_location + '资料</a>')
             # 设置标签文本可以打开外部链接
             self.textBrowser.setOpenExternalLinks(True)
             return None
