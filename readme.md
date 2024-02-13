@@ -29,3 +29,4 @@
 * 还没想好，欢迎在issue与我交流
 
 ### 非常欢迎各位大佬来帮我优化代码，我写的真的是一坨
+* 附：[BackRoom 中文Wiki](http://backrooms-wiki-cn.wikidot.com/)

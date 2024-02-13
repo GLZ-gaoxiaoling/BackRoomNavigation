@@ -34,11 +34,11 @@ class Ui_MainWindow(object):
         self.pushButton.setObjectName("pushButton")
         self.pushButton.clicked.connect(self.centerCtrl)
 
-        self.label = QtWidgets.QTextEdit(self.centralwidget)
-        self.label.setReadOnly(True)
-        self.label.setGeometry(QtCore.QRect(110, 380, 241, 151))
-        self.label.setFont(QtGui.QFont('Adobe Devanagari', 10))
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.textBrowser = QtWidgets.QTextBrowser(self.centralwidget)
+        self.textBrowser.setReadOnly(True)
+        self.textBrowser.setGeometry(QtCore.QRect(110, 380, 241, 151))
+        self.textBrowser.setFont(QtGui.QFont('Adobe Devanagari', 10))
+        self.textBrowser.setAlignment(QtCore.Qt.AlignCenter)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 491, 30))
@@ -58,19 +58,25 @@ class Ui_MainWindow(object):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def centerCtrl(self):
-        self.label.setText("PARDON MADE")
-        kono_location = self.textEdit.toPlainText()
+        self.textBrowser.setText("PARDON MADE")
+        # 获取编辑框中的文本
+        current_location = self.textEdit.toPlainText()
         after_location = self.textEdit_2.toPlainText()
 
-        self.label.setText("后室导航中...")
-        shortest_path = bfs_shortest_path(self.graph, kono_location, after_location)
+        self.textBrowser.setText("后室导航中...")
+        # 使用bfs算法寻找最短路径
+        shortest_path = bfs_shortest_path(self.graph, current_location, after_location)
+        # 如果没有找到最短路径
         if shortest_path is None:
-            self.label.setText("无法到达")
-            return 0
+            self.textBrowser.setText(u'<a href="www.baidu.com">我去</a>')
+            # 设置标签文本可以打开外部链接
+            self.textBrowser.setOpenExternalLinks(True)
+            return None
         for  i in range(len(shortest_path)):
             shortest_path[i]="Level "+shortest_path[i]
+        # 将最短路径中的节点连接成字符串
         str_path = "->".join(map(str, shortest_path))
-        self.label.setText(str_path)
+        self.textBrowser.setText(str_path)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -88,7 +94,7 @@ class Ui_MainWindow(object):
                                            "</style></head><body style=\" font-family:\'SimSun\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
                                            "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">预期抵达层级</p></body></html>"))
         self.pushButton.setText(_translate("MainWindow", "开始导航"))
-        self.label.setText(_translate("MainWindow", "<html><head/><body><p><br/></p></body></html>"))
+        self.textBrowser.setText(_translate("MainWindow", "<html><head/><body><p><br/></p></body></html>"))
         self.menu.setTitle(_translate("MainWindow", "菜单"))
         self.actionSetting.setText(_translate("MainWindow", "帮助"))
 
