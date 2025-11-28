@@ -25,11 +25,13 @@ def bfs_shortest_path(graph, start, goal):
 
         # 将当前节点的邻居节点添加到队列中
         for neighbor in graph.get(current_node, []):
-            if neighbor not in visited:
+            # 将邻居节点格式从"Level 11"转换为"level11"
+            neighbor_node = neighbor.lower().replace(" ", "")
+            if neighbor_node not in visited:
                 new_path = list(path)
-                new_path.append(neighbor)
+                new_path.append(neighbor_node)
                 queue.append(new_path)
-                visited.add(neighbor)
+                visited.add(neighbor_node)
 
     return None
 

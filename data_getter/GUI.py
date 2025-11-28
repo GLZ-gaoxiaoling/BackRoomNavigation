@@ -10,38 +10,39 @@ import time
 
 
 from Navigation.path_finder import bfs_shortest_path
-from Navigation.graph_loader import get_graph_from_db
+from Navigation.graph_loader import get_combined_data
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_MainWindow(object):
     def __init__(self):
-        self.graph = get_graph_from_db('level_exit.db')
+        self.graph, self.level_info = get_combined_data('level_exit.db')
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(491, 761)
+        MainWindow.resize(600, 800)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit.setGeometry(QtCore.QRect(110, 170, 241, 71))
+        self.textEdit.setGeometry(QtCore.QRect(150, 170, 241, 71))
         self.textEdit.setObjectName("textEdit")
         self.textEdit_2 = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit_2.setGeometry(QtCore.QRect(110, 290, 241, 71))
+        self.textEdit_2.setGeometry(QtCore.QRect(150, 290, 241, 71))
         self.textEdit_2.setObjectName("textEdit_2")
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setGeometry(QtCore.QRect(370, 660, 112, 34))
+        self.pushButton.setGeometry(QtCore.QRect(420, 700, 112, 34))
         self.pushButton.setObjectName("pushButton")
         self.pushButton.clicked.connect(self.centerCtrl)
 
         self.textBrowser = QtWidgets.QTextBrowser(self.centralwidget)
         self.textBrowser.setReadOnly(True)
-        self.textBrowser.setGeometry(QtCore.QRect(110, 380, 241, 151))
+        self.textBrowser.setGeometry(QtCore.QRect(100, 380, 400, 280))
         self.textBrowser.setFont(QtGui.QFont('Adobe Devanagari', 10))
-        self.textBrowser.setAlignment(QtCore.Qt.AlignCenter)
+        self.textBrowser.setAlignment(QtCore.Qt.AlignLeft)
+        self.textBrowser.setOpenExternalLinks(True)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 491, 30))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 600, 30))
         self.menubar.setObjectName("menubar")
         self.menu = QtWidgets.QMenu(self.menubar)
         self.menu.setObjectName("menu")
@@ -65,26 +66,94 @@ class Ui_MainWindow(object):
         msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
         msg.exec_()
     def centerCtrl(self):
-        self.textBrowser.setText("PARDON MADE")
         # 获取编辑框中的文本
         current_location = self.textEdit.toPlainText()
         after_location = self.textEdit_2.toPlainText()
 
         self.textBrowser.setText("后室导航中...")
+        
+        # 将用户输入转换为图中的节点格式（level11）
+        start_node = f"level{current_location}"
+        end_node = f"level{after_location}"
+        
         # 使用bfs算法寻找最短路径
-        shortest_path = bfs_shortest_path(self.graph, current_location, after_location)
+        shortest_path = bfs_shortest_path(self.graph, start_node, end_node)
         # 如果没有找到最短路径
         if shortest_path is None:
             self.textBrowser.setText(u'<a href="http://backrooms-wiki-cn.wikidot.com/level-'+after_location+'">未找到路径,'
                                                                                                             '请自行查看level ' + after_location + '资料</a>')
-            # 设置标签文本可以打开外部链接
-            self.textBrowser.setOpenExternalLinks(True)
             return None
-        for  i in range(len(shortest_path)):
-            shortest_path[i]="Level "+shortest_path[i]
-        # 将最短路径中的节点连接成字符串
-        str_path = "->".join(map(str, shortest_path))
-        self.textBrowser.setText(str_path)
+        
+        # 生成详细的路线信息
+        detailed_path = self.generate_detailed_path(shortest_path)
+        self.textBrowser.setText(detailed_path)
+    
+    def generate_detailed_path(self, path):
+        """
+        生成包含楼层介绍、等级和危险提示的详细路线信息
+        """
+        # 提取楼层编号（从level11格式中提取11）
+        level_numbers = [level.replace('level', '') for level in path]
+        
+        # 统计危险楼层
+        dangerous_levels = []
+        for level in path:
+            if level in self.level_info and self.level_info[level]['difficulty'] > 4:
+                dangerous_levels.append(level.replace('level', ''))
+        
+        # 生成路线建议
+        result = "<h3>后室导航路线</h3>"
+        
+        # 添加用"->"连接的路径线
+        simple_path = " -> ".join([f"Level {num}" for num in level_numbers])
+        result += f"<p><strong>路径:</strong> {simple_path}</p>"
+        
+        result += f"<p><strong>总楼层数:</strong> {len(path)} 层</p>"
+        result += f"<p><strong>危险楼层数:</strong> {len(dangerous_levels)} 层</p>"
+        
+        if dangerous_levels:
+            result += f"<p><strong>危险楼层:</strong> {', '.join(map(str, dangerous_levels))}</p>"
+            result += "<p style='color:red;'><strong>警告:</strong> 路线中包含危险楼层，请小心通过！</p>"
+        else:
+            result += "<p style='color:green;'><strong>安全提示:</strong> 路线中没有危险楼层，可以安全通过。</p>"
+        
+        result += "<hr>"
+        result += "<h4>详细路线:</h4>"
+        
+        # 遍历路径中的每个楼层
+        for i, level in enumerate(path):
+            level_num = level.replace('level', '')
+            level_name = f"Level {level_num}"
+            
+            # 获取楼层信息
+            description = "暂无介绍"
+            difficulty = 0
+            if level in self.level_info:
+                description = self.level_info[level]['description']
+                difficulty = self.level_info[level]['difficulty']
+            
+            # 确定楼层危险等级
+            danger_level = ""
+            if difficulty > 4:
+                danger_level = "<span style='color:red; font-weight:bold;'> [危险]</span>"
+            elif difficulty > 2:
+                danger_level = "<span style='color:orange; font-weight:bold;'> [较危险]</span>"
+            else:
+                danger_level = "<span style='color:green; font-weight:bold;'> [安全]</span>"
+            
+            # 添加楼层信息
+            result += f"<p><strong>{i+1}. {level_name}</strong>{danger_level}</p>"
+            result += f"<p>  等级: {difficulty}/5</p>"
+            result += f"<p>  介绍: {description[:150]}...</p>" if len(description) > 150 else f"<p>  介绍: {description}</p>"
+            
+            # 添加楼层链接
+            result += f"<p>  <a href='http://backrooms-wiki-cn.wikidot.com/level-{level_num}'>查看详细资料</a></p>"
+            
+            # 添加分隔线
+            if i < len(path) - 1:
+                result += "<hr style='margin: 10px 0;'>"
+        
+        return result
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
